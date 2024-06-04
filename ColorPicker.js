@@ -269,6 +269,7 @@ module.exports = class ColorPicker extends Component {
 			if (event && event.nativeEvent && typeof event.nativeEvent.preventDefault == 'function') event.nativeEvent.preventDefault()
 			if (event && event.nativeEvent && typeof event.nativeEvent.stopPropagation == 'function') event.nativeEvent.stopPropagation()
 			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return;
+			console.log(`x: ${event.nativeEvent.locationX}`)
 			const adjusted = this.sliderThumbAdjuster(event)
 			this.sliderMovement(adjusted, gestureState)
 		},
@@ -422,7 +423,7 @@ module.exports = class ColorPicker extends Component {
 	outOfBox(measure, gestureState) {
 		const { x, y, width, height } = measure
 		const { moveX, moveY, x0, y0 } = gestureState
-		// console.log(`${moveX} , ${moveY} / ${x} , ${y} / ${locationX} , ${locationY}`);
+		// console.log(`${moveX} , ${moveY} / ${x} , ${y} / `);
 		return !(moveX >= x && moveX <= x + width && moveY >= y && moveY <= y + height)
 	}
 	outOfWheel(nativeEvent) {
@@ -454,6 +455,16 @@ module.exports = class ColorPicker extends Component {
 				locationX: row ? event.nativeEvent.locationX : correctedTouch,
 				locationY: row ? correctedTouch : event.nativeEvent.locationY,
 			}}
+	}
+	sliderMeasureAdjuster(hitSlop) {
+		const row = this.props.row
+		const {x, y, width, height} = this.sliderMeasure
+		return {
+			x: row ? x - hitSlop : x,
+			y: row ? y : y - hitSlop,
+			width: row ? width + hitSlop*2 : width,
+			height: row ? height : height + hitSlop*2,
+		}
 	}
 	ratio(nativeEvent) {
 		const row = this.props.row
@@ -725,20 +736,20 @@ module.exports = class ColorPicker extends Component {
 					</View>}
 				</View>}
 				{!swatchesOnly && !sliderHidden && (discrete
-					? <View style={[ss.swatches, swatchStyle]} key={'$2'}>{this.disc}</View>
-					: <View style={[ss.slider, sliderStyle]} key={'$2'} onLayout={event => {
+						? <View style={[ss.swatches, swatchStyle]} key={'$2'}>{this.disc}</View>
+						: <View style={[ss.slider, sliderStyle]} key={'$2'} onLayout={event => {
 							const dimens = event.nativeEvent.layout;
 							this.sliderXOffset = dimens.x;
 							this.sliderYOffset = dimens.y;
 						}}>
-						<View style={[ss.grad, { backgroundColor: hex }]} key={'$2$1'}>
-							<Image style={[ss.sliderImg, { opacity: !this.props.sliderLoadingIndicator || this.state.sliderImageLoaded ? 1 : 0 }]} source={row ? srcSliderRotated : srcSlider} onLoad={this.onSliderImageLoad} resizeMode="stretch" />
+							<View style={[ss.grad, { backgroundColor: hex }]} key={'$2$1'}>
+								<Image style={[ss.sliderImg, { opacity: !this.props.sliderLoadingIndicator || this.state.sliderImageLoaded ? 1 : 0 }]} source={row ? srcSliderRotated : srcSlider} onLoad={this.onSliderImageLoad} resizeMode="stretch" />
+							</View>
+							{(this.props.sliderLoadingIndicator ? this.state.sliderImageLoaded : true) && <Animated.View style={[ss.sliderThumb, sliderThumbStyle, Elevations[4], { pointerEvents: 'none' }]} key={'$2$2'} />}
+							<View style={[ss.cover]} key={'$2$3'} onLayout={this.onSliderLayout} {...sliderPanHandlers} ref={r => { this.slider = r }}>
+								{!!this.props.sliderLoadingIndicator && !this.state.sliderImageLoaded && this.props.sliderLoadingIndicator}
+							</View>
 						</View>
-						{(this.props.sliderLoadingIndicator ? this.state.sliderImageLoaded : true) && <Animated.View style={[ss.sliderThumb, sliderThumbStyle, Elevations[4], { pointerEvents: 'none' }]} key={'$2$2'} />}
-						<View style={[ss.cover]} key={'$2$3'} onLayout={this.onSliderLayout} {...sliderPanHandlers} ref={r => { this.slider = r }}>
-							{!!this.props.sliderLoadingIndicator && !this.state.sliderImageLoaded && this.props.sliderLoadingIndicator}
-						</View>
-					</View>
 				)}
 				{swatches && swatchesLast && <View style={[ss.swatches, swatchStyle]} key={'SW'}>{this.swatches}</View>}
 			</View>
