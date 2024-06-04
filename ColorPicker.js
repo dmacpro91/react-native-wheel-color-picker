@@ -268,7 +268,7 @@ module.exports = class ColorPicker extends Component {
 			if (this.props.disabled) return;
 			if (event && event.nativeEvent && typeof event.nativeEvent.preventDefault == 'function') event.nativeEvent.preventDefault()
 			if (event && event.nativeEvent && typeof event.nativeEvent.stopPropagation == 'function') event.nativeEvent.stopPropagation()
-			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return; //Fix this too (hit slop)
+			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return;
 			const adjusted = this.sliderThumbAdjuster(event)
 			this.sliderMovement(adjusted, gestureState)
 		},
