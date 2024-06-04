@@ -159,6 +159,8 @@ const flipInterpolationConfig = {
 module.exports = class ColorPicker extends Component {
 	// testData = {}
 	// testView = {forceUpdate(){}}
+	sliderXOffset = 0
+	sliderYOffset = 0
 	color = { h: 0, s: 0, v: 100 }
 	slideX = new Animated.Value(0)
 	slideY = new Animated.Value(0)
@@ -245,7 +247,8 @@ module.exports = class ColorPicker extends Component {
 			if (this.props.disabled) return false;
 			const { nativeEvent } = event
 			if (this.outOfSlider(nativeEvent)) return
-			this.sliderMovement(event, gestureState)
+			const adjusted = this.sliderThumbAdjuster(event)
+			this.sliderMovement(adjusted, gestureState)
 			this.updateValue({ nativeEvent })
 			return true
 		},
@@ -265,8 +268,9 @@ module.exports = class ColorPicker extends Component {
 			if (this.props.disabled) return;
 			if (event && event.nativeEvent && typeof event.nativeEvent.preventDefault == 'function') event.nativeEvent.preventDefault()
 			if (event && event.nativeEvent && typeof event.nativeEvent.stopPropagation == 'function') event.nativeEvent.stopPropagation()
-			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return;
-			this.sliderMovement(event, gestureState)
+			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return; //Fix this too (hit slop)
+			const adjusted = this.sliderThumbAdjuster(event)
+			this.sliderMovement(adjusted, gestureState)
 		},
 		onMoveShouldSetPanResponder: () => true,
 		onPanResponderRelease: (event, gestureState) => {
@@ -429,11 +433,27 @@ module.exports = class ColorPicker extends Component {
 		const row = this.props.row
 		const loc = row ? nativeEvent.locationY : nativeEvent.locationX
 		const { width, height } = this.sliderMeasure
-		return (loc > (row ? height - width : width - height))
+		return (loc > (row ? (height - width) + this.props.sliderSize/2 : (width - height) + this.props.sliderSize/2))
 	}
 	val(v) {
 		const d = this.props.discrete, r = 11 * Math.round(v / 11)
 		return d ? (r >= 99 ? 100 : r) : v
+	}
+	sliderThumbAdjuster(event) {
+		const sliderThumbSize = this.props.sliderSize
+		const row = this.props.row
+		let correctedTouch = row ? event.nativeEvent.locationY : event.nativeEvent.locationX
+		correctedTouch -= sliderThumbSize/2
+		const min = row ? this.sliderYOffset : this.sliderXOffset
+		const max = row ? this.sliderYOffset + this.sliderLength : this.sliderXOffset + this.sliderLength
+		if(correctedTouch < min)
+			correctedTouch = min;
+		else if(correctedTouch > max)
+			correctedTouch = max
+		return {nativeEvent: {
+				locationX: row ? event.nativeEvent.locationX : correctedTouch,
+				locationY: row ? correctedTouch : event.nativeEvent.locationY,
+			}}
 	}
 	ratio(nativeEvent) {
 		const row = this.props.row
@@ -706,7 +726,11 @@ module.exports = class ColorPicker extends Component {
 				</View>}
 				{!swatchesOnly && !sliderHidden && (discrete
 					? <View style={[ss.swatches, swatchStyle]} key={'$2'}>{this.disc}</View>
-					: <View style={[ss.slider, sliderStyle]} key={'$2'}>
+					: <View style={[ss.slider, sliderStyle]} key={'$2'} onLayout={event => {
+							const dimens = event.nativeEvent.layout;
+							this.sliderXOffset = dimens.x;
+							this.sliderYOffset = dimens.y;
+						}}>
 						<View style={[ss.grad, { backgroundColor: hex }]} key={'$2$1'}>
 							<Image style={[ss.sliderImg, { opacity: !this.props.sliderLoadingIndicator || this.state.sliderImageLoaded ? 1 : 0 }]} source={row ? srcSliderRotated : srcSlider} onLoad={this.onSliderImageLoad} resizeMode="stretch" />
 						</View>
