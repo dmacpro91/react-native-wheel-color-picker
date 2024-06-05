@@ -180,6 +180,7 @@ module.exports = class ColorPicker extends Component {
 		discrete: false, // use swatches of shades instead of slider
 		discreteLength: 10, // number of swatches of shades, should be > 1
 		sliderHidden: false, // if true the slider is hidden
+		sliderHitSlop: undefined, //defines how far the touch event can move away from the slider once started
 		swatches: true, // show color swatches
 		swatchesLast: true, // if false swatches are shown before wheel
 		swatchesOnly: false, // show swatch only and hide wheel and slider
@@ -246,10 +247,9 @@ module.exports = class ColorPicker extends Component {
 		onStartShouldSetPanResponderCapture: (event, gestureState) => {
 			if (this.props.disabled) return false;
 			const { nativeEvent } = event
-			if (this.outOfSlider(nativeEvent)) return
 			const adjusted = this.sliderThumbAdjuster(event)
 			this.sliderMovement(adjusted, gestureState)
-			this.updateValue({ nativeEvent })
+			this.updateValue(adjusted)
 			return true
 		},
 		onStartShouldSetPanResponder: () => true,
@@ -268,8 +268,7 @@ module.exports = class ColorPicker extends Component {
 			if (this.props.disabled) return;
 			if (event && event.nativeEvent && typeof event.nativeEvent.preventDefault == 'function') event.nativeEvent.preventDefault()
 			if (event && event.nativeEvent && typeof event.nativeEvent.stopPropagation == 'function') event.nativeEvent.stopPropagation()
-			if (this.outOfSlider(event.nativeEvent) || this.outOfBox(this.sliderMeasure, gestureState)) return;
-			console.log(`x: ${event.nativeEvent.locationX}`)
+			if (this.outOfBox(this.sliderMeasureAdjuster(this.props.sliderHitSlop), gestureState)) return;
 			const adjusted = this.sliderThumbAdjuster(event)
 			this.sliderMovement(adjusted, gestureState)
 		},
@@ -430,12 +429,6 @@ module.exports = class ColorPicker extends Component {
 		const { radius } = this.polar(nativeEvent)
 		return radius > 1
 	}
-	outOfSlider(nativeEvent) {
-		const row = this.props.row
-		const loc = row ? nativeEvent.locationY : nativeEvent.locationX
-		const { width, height } = this.sliderMeasure
-		return (loc > (row ? (height - width) + this.props.sliderSize/2 : (width - height) + this.props.sliderSize/2))
-	}
 	val(v) {
 		const d = this.props.discrete, r = 11 * Math.round(v / 11)
 		return d ? (r >= 99 ? 100 : r) : v
@@ -443,8 +436,9 @@ module.exports = class ColorPicker extends Component {
 	sliderThumbAdjuster(event) {
 		const sliderThumbSize = this.props.sliderSize
 		const row = this.props.row
-		let correctedTouch = row ? event.nativeEvent.locationY : event.nativeEvent.locationX
+		let correctedTouch = row ? event.nativeEvent.pageY : event.nativeEvent.pageX
 		correctedTouch -= sliderThumbSize/2
+		correctedTouch -= row ? this.sliderMeasure.y : this.sliderMeasure.x
 		const min = row ? this.sliderYOffset : this.sliderXOffset
 		const max = row ? this.sliderYOffset + this.sliderLength : this.sliderXOffset + this.sliderLength
 		if(correctedTouch < min)
