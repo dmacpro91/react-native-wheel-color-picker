@@ -112,6 +112,8 @@ export default App
 
 `sliderHidden: false` if true the slider is hidden
 
+`sliderHitSlop: 0` defines how far the touch event can move away from the slider once started
+
 `swatches: true` show color swatches
 
 `swatchesLast: true` if false swatches are shown before wheel

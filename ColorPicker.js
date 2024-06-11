@@ -180,7 +180,7 @@ module.exports = class ColorPicker extends Component {
 		discrete: false, // use swatches of shades instead of slider
 		discreteLength: 10, // number of swatches of shades, should be > 1
 		sliderHidden: false, // if true the slider is hidden
-		sliderHitSlop: undefined, //defines how far the touch event can move away from the slider once started
+		sliderHitSlop: 0, //defines how far the touch event can move away from the slider once started
 		swatches: true, // show color swatches
 		swatchesLast: true, // if false swatches are shown before wheel
 		swatchesOnly: false, // show swatch only and hide wheel and slider
